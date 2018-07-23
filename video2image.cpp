@@ -214,5 +214,231 @@ int capture2Imgs(int argc, char **argv)
 	return 0;
 }
 	
+int captureImage(int argc, char **argv)
+{
+	FILE *fpList = NULL;
+	printf("\nVideo or Image path List:\n");
+	char getpath[300];
+	char putpath[300];
+	char strLine[1024];
+	int numSpan =1;
+	int show_flag = 0;
+	int num = 0;
 	
+	scanf("%s", getpath);
+	if(strstr(getpath,".dav")||(strstr(getpath,".avi"))
+	{
+		printf("\nVideo interval:");
+		scanf("%d", &numSpan);
+		
+		printf("\nShow image?1 for Y /0 for N");
+		scanf("%d", &show_flag);
+		captureImg(getpath, numSpan, show_flag);
+	}
+	else if(strstr(getpath,".txt")||(strstr(getpath,".list"))
+	{
+		printf("\nVideo frame interval:");
+		scanf("%d", &numSpan);
+		
+		printf("\nShow image?1 for Y /0 for N");
+		scanf("%d", &show_flag);
+		
+		if(fpList = fopen(getpath, "r") == NULL)
+		{
+			printf("readTestList:error\n");
+			fclose(fpList);
+			return -1;
+		}
+		while(!feof(fpList))
+		{
+			fgets(strLine, 1024, fpList);
+			if(strLine[strlen(strlen) - 1] == '\n')
+				strLine[strlen(strlen) - 1] = '\0';
+			
+			captureImg(getpath, numSpan, show_flag);
+		}
+	}
+	else
+	{
+		printf("Input Video or Video Path error!\n");
+		return -1;
+	}
+	return 0;
+}
+
+int captureInfrared_rgb(int argc, char **argv)
+{
+	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
+	FILE *fp = NULL;
+	fp = fopen("d:\\infrafred.txt", "w");
+	printf("\nVideo Path List:");
+	cv::Mat image;
+	FILE *fplist = NULL;
+	char strLine[1024];
+	char getpath[300];
+	char putpath[300];
+	int numSpan = 1;
+	int show_flag = 0;
+	int roi_w = 300;
+	int roi_h = 200;
+	scanf("%s", getpath);
+	if((fplist = fopen(getpath, "r")) == NULL)
+	{
+		printf("readTestList:error\n");
+		fclose(fplist);
+		return -1;
+	}
+	int num = 0;
+	while(!feof(fplist))
+	{
+		num += 1;
+		cout << "num" << num << endl << endl;
+		fgets(strLine, 1024, fplist);			
+		if(strLine[strlen(strlen) - 1] == '\n')
+				strLine[strlen(strlen) - 1] = '\0';
+		
+		string inPath(strLine);
+		int npos1 = inPath.find_last_of("\\");
+		string dirname = inPath.substr(0, npos1);
+		string dirnameC = dirname;
+		string vname = inPath.substr(npos1, string::npos);
+		string infrDir = dirname.append("\\Infrared");
+		string otherDir = dirname.append("\\Other");
+		_mkdir(infrDir.c_str());
+		_mkdir(otherDir.c_str());
+		
+		VideoCapture capture(strLine);
+		if(capture.isOpened())
+		{
+			capture >> image;
+			if(findInfrared(image))
+			{
+				string dstName = infrDir.append(vname);
+				printf("videoName:%s,",strLine);
+				SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_INTENSITY);
+				printf("Infrared\n", strLine);
+				SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
+				fprintf(fp, "%s\n", strLine);
+			}
+			else
+			{
+				string dstName = otherDir.append(vname);
+				printf("videoName:%s,",strLine);
+				SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_INTENSITY);
+				printf("Color\n", strLine);
+				SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
+			}
+		}
+		else
+		{
+			cout << "cannot open" << inPath << endl;
+		}
+	}
+	fclose(fp);
+	return 0;
+}
+			
+int captureInfrared_yuv(int argc, char **argv)
+{
+	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
+	FILE *fp = NULL;
+	fp = fopen("d:\\infrafred.txt", "w");
+	printf("\nVideo Path List:");
+	cv::Mat image;
+	FILE *fplist = NULL;
+	char strLine[1024];
+	char getpath[300];
+	char putpath[300];
+
+	int numSpan = 75;
+	int show_flag = 0;
+	int roi_w = 300;
+	int roi_h = 200;
+	int frameNum = 0;
+	bool grayVideoFlg = true;
 	
+	scanf("%s", getpath);
+	if((fplist = fopen(getpath, "r")) == NULL)
+	{
+		printf("readTestList:error\n");
+		fclose(fplist);
+		return -1;
+	}
+	int num = 0;
+	while(!feof(fplist))
+	{
+		num += 1;
+		cout << "\nvideo:" << num << endl << endl;
+		fgets(strLine, 1024, fplist);			
+		if(strLine[strlen(strlen) - 1] == '\n')
+			strLine[strlen(strlen) - 1] = '\0';
+		
+		string inPath(strLine);
+		int npos1 = inPath.find_last_of("\\");
+		string dirname = inPath.substr(0, npos1);
+		string dirnameC = dirname;
+		string vname = inPath.substr(npos1, string::npos);
+		string infrDir = dirname.append("\\Infrared");
+		string otherDir = dirname.append("\\Other");
+#if 0		
+		_mkdir(infrDir.c_str());
+		_mkdir(otherDir.c_str());
+#endif
+		VideoCapture capture(strLine);
+		
+		double fps = capture.get(CV_CAP_PROP_FPS);
+		if(fps != 0)
+			numSpan = fps*3;
+		else
+			numSpan = 75;
+#if 1
+		if(capture.isOpened())
+		{
+			frameNum ++;
+			capture >> image;
+			if(findInfraredInROI(image, roi_w, roi_h) == 0)
+			{
+				grayVideoFlg = false;
+			}
+			else
+			{
+				grayVideoFlg =true
+			}
+		}
+#else	
+		while(capture.isOpened())
+		{
+			frameNum ++;
+			capture >> image;
+			if((frameNum%numSpan) != 1)
+				continue;
+			
+			if(findInfraredInROI(image, roi_w, roi_h) == 0)
+			{
+				grayVideoFlg = false;
+				break;
+			}
+			grayVideoFlg =true
+		}
+#endif			
+		if(grayVideoFlg)
+		{
+			string dstName = infrDir.append(vname);
+			printf("videoName:%s,",strLine);
+			SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_INTENSITY);
+			printf("Infrared\n", strLine);
+			SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
+			fprintf(fp, "%s\n", strLine);
+		}
+		else
+		{
+			string dstName = otherDir.append(vname);
+			printf("videoName:%s,",strLine);
+			SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_INTENSITY);
+			printf("Color\n", strLine);
+			SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
+		}
+	}
+	fclose(fp);
+	return 0;
+}
