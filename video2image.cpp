@@ -442,3 +442,277 @@ int captureInfrared_yuv(int argc, char **argv)
 	fclose(fp);
 	return 0;
 }
+
+			
+typedef struct{
+	int type;
+	float ptx;
+	float pty;
+	float sx;
+	float sy;
+}det_box[40];
+			
+void drawBox(int argc, char **argv)
+{
+	#define BUFFLEN 1024
+	FILE *fp, *ft;
+	int i;
+	char b, *p;
+	char strLine[1024];
+	char fpath[500];
+	char pathName[1024];
+	char newDirName[1024];
+	char newImgName[1024];
+	char newImg[1024];
+	char buff[BUFFLEN];
+	
+	IplImage = *showimage;
+	int flag = 0;
+	det_box box;
+	
+	printf("Please Enter Image List Path:\n");
+	scanf("%s", fpath);
+	if((fp = fopen(fpath, "r")) == NULL)
+	{
+		printf("Image List Error!\n");
+		fclose(fp);
+		return -1;
+	}
+	
+	while(!feof(fp))
+	{
+		fgets(strLine, 1024, fplist);			
+		if(strLine[strlen(strlen) - 1] == '\n')
+			strLine[strlen(strlen) - 1] = '\0';
+		printf("%s\n", strLine);
+		
+		showimage = cvLoadImage(strLine, 1);
+		int w = showimage->width;
+		int h = showimage->height;
+		
+		p = strrchr(strLine, '\\');
+		p = p + 1;
+		
+		sprintf(newDirName, "%s\\draw_label\\", "Y:\\face_person\\FocusData");
+		mkdir(newDirName);
+		sprintf(newImg, "%s%s", newDirName, p);
+		
+		int nboxes = 0;
+		char labelpath[4096];
+		find_replace(strLine, "images", "labels", labelpath);
+		find_replace(labelpath, "JPEGImages", "labels", labelpath);
+		find_replace(labelpath, ".jpg", ".txt", labelpath);
+		find_replace(labelpath, ".JPEG", ".txt", labelpath);
+		find_replace(labelpath, ".png", ".txt", labelpath);
+		
+		ft = fopen(labelpath, "r");
+		while(fgets(buff, BUFFLEN, ft);
+		{
+			int j = 0;
+			char *delim = " ";
+			char *p = strtok(buff, delim);
+			while(p!=NULL)
+			{
+				if(j%5 == 0)
+					box[nboxes].type = atoi(p);
+				else if(j%5 == 1)
+					box[nboxes].ptx = atof(p);
+				else if(j%5 == 2)
+					box[nboxes].pty = atof(p);
+				else if(j%5 == 3)
+					box[nboxes].sx = atof(p);
+				else
+					box[nboxes].sy = atof(p);
+				
+				p = strtok(NULL, delim);
+				j ++;
+			}	
+			nboxes ++;
+		}
+			  
+		for(i = 0; i < nboxes; ++i)
+		{
+			CvPoint p0, p1;
+			p0.x = w*(box[i].ptx - box[i].sx/2);
+			p0.y = h*(box[i].pty - box[i].sy/2);
+			p1.x = w*(box[i].ptx - box[i].sx/2);
+			p1.y = h*(box[i].pty - box[i].sy/2);
+			
+			if(box[i].type == 0)
+				cvRectangle(showimage, p0, p1, CV_RGB(255, 0, 0), 2, 8, 0);
+			else if(box[i].type == 1)
+				cvRectangle(showimage, p0, p1, CV_RGB(0, 0, 255), 2, 8, 0);
+			else
+				cvRectangle(showimage, p0, p1, CV_RGB(0, 128, 128), 2, 8, 0);
+		}
+		cvSaveImage(newImg, showimage);
+#if 0			  
+		namedWindow("drawBox", CV_WINDOW_AUTOSIZE);
+		imshow("drawBox", showimage);
+
+		if(flag==0)
+			b = waitKey(0);
+		else
+			b = waitKey(1);
+
+		if(b == 'b')
+			flag = 0;
+		else
+			flag = 1;
+		
+		cvDestroyAllWindows();
+#endif
+		fclose(ft);
+	}
+	fclose(fp);
+}
+			
+			
+void showImage(int argc, char **argv)
+{
+	FILE *fp;
+	char b;
+	char fpath[1024];
+	char strLine[1024];
+	cv::Mat showimage;
+	int flag = 0;
+	
+	printf("Please Enter Image List Path:\n");
+	scanf("%s", fpath);
+	if((fp = fopen(fpath, "r")) == NULL)
+	{
+		printf("Image List Error!\n");
+		fclose(fp);
+		return ;
+	}
+	
+	while(!feof(fp))
+	{
+		fgets(strLine, 1024, fplist);			
+		if(strLine[strlen(strlen) - 1] == '\n')
+			strLine[strlen(strlen) - 1] = '\0';
+		printf("%s\n", strLine);
+		
+		showimage = imread(strLine, 1);
+		int w = showimage.size().width;
+		int h = showimage.size().height;
+		
+		if(w*h >= 1280*720)
+			resize(showimage, showimage, Size(), 0.5, 0.5);
+		
+		imshow("drawBox", showimage);
+
+		if(flag==0)
+			b = waitKey(0);
+		else
+			b = waitKey(1);
+
+		if(b == 'b')
+			flag = 0;
+		else
+			flag = 1;
+		
+	}
+	fclose(fp);
+}			
+			  
+void imageResize(int argc, char **argv)
+{
+	FILE *fp;
+	Mat srcImg, dstImg;
+	float w, h, w_new = 540.f, h_new;
+	float scale_x, scale_y, ratio;
+	char name[100];
+	char savePath[100];
+	char fpath[1024];
+	char strLine[1024];
+	char tempPath[100];
+	char imgCover=NULL;
+	
+	printf("Please Enter Image List Path:\n");
+	scanf("%s", fpath);
+	if((fp = fopen(fpath, "r")) == NULL)
+	{
+		printf("Image List Error!\n");
+		fclose(fp);
+		return ;
+	}
+	
+	fflush(stdin);
+	printf("Cover Old Image File? Y/N\n");
+	scanf("%c", &imgCover);
+	if(imgCover == 'N' || imgCover == 'n')
+	{
+		fflush(stdin);
+		printf("Please Enter the Image Save Path:\n");
+		scanf("%s", savePath);
+	}
+	
+	while(!feof(fp))
+	{
+		fgets(strLine, 1024, fplist);			
+		if(strLine[strlen(strlen) - 1] == '\n')
+			strLine[strlen(strlen) - 1] = '\0';
+		printf("%s\n", strLine);
+		
+		srcImg = imread(strLine, 1);
+		int w = srcImg.size().width;
+		int h = srcImg.size().height;
+		
+		ratio = h/w;
+		h_new = floor(ratio*w_new);
+		
+		scale_x = w/w_new;
+		scale_y = h/h_new;
+		
+		resize(srcImg, dstImg, Size(540, h_new), 0, 0, INTER_LINEAR);
+		
+		get_filename(strLine, name);
+		
+		if(imgCover == 'N' || imgCover == 'n')
+		{
+			strcpy(tempPath, savePath);
+			strcat(tempPath, name);
+			printf("tempPath=%s\n", tempPath);
+			imwrite(tempPath, dstImg);
+		}
+		else
+			imwrite(strLine, dstImg);
+		
+#if 0
+		imshow("540x360", dstImg);
+		waitKey();
+#endif
+	}
+	fclose(fp);
+}
+			  
+int main(int argc, char **argv)
+{
+	printf("0: video -> image\n");
+	printf("1: Extract 2 continuous-frames from video\n");
+	printf("2: Infrared Video distinguish(RGB)\n");
+	printf("3: Infrared Video distinguish(YUV)\n");	
+	printf("4: Draw box in label image\n");
+	printf("5: Preview image\n");
+	printf("6: Image Resize(Letter box)\n");
+	printf("Please Select tool's index: 0 or 1 or 2 or 3 or 4 or 5 or 6:");
+	int model = 0;
+	scanf("%d", &model);
+	if(model == 1)
+		capture2Imgs(argc, argv);
+	else if(model == 2)
+		captureInfrared_rgb(argc, argv);
+	else if(model == 3)
+		captureInfrared_yuv(argc, argv);
+	else if(model == 4)
+		drawBox(argc, argv);
+	else if(model == 5)
+		showImage(argc, argv);
+	else if(model == 6)
+		imageResize(argc, argv);
+	else
+		captureImage(argc, argv);
+	return 0;
+}
+}
