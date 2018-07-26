@@ -215,7 +215,73 @@ int capture2Imgs(int argc, char **argv)
 	}
 	return 0;
 }
+
+int captureImg(char *getpath, int numSpan, int show_flag)
+{
+	char putpath[300];
+
+	VideoCapture capture(getpath);
+	cout << getpath << endl;
 	
+	string inPath(getpath);
+	
+	int npos1 = inPath.find_last_of("\\");
+	int npos2 = inPath.find_last_of(".");
+	string dirname = inPath.substr(0, npos2);
+	_mkdir(dirname.c_str());
+	string name = inPath.substr(npos1+1, npos2-4);
+	string newname = name.substr(0, npos2 - npos1 - 1);
+	cout << "name " << dirname << endl << newname << endl;
+	
+	cv::Mat image;
+	int64 tic, toc;
+	double time = 0;
+	bool show_visualization = true;
+	static int frameNum = 0;
+	static int printNum = 0;
+	
+	int width = capture.get(CV_CAP_PROP_FRAME_WIDTH);
+	int height = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
+	double fps = capture.get(CV_CAP_PROP_FPS);
+	long int totalNumFrames = (long int)capture.get(CV_CAP_PROP_FRAME_COUNT);
+	
+	cout << "Resolution(width*height):" << width << "*" << height << endl;
+	cout << "Total frames:" << totalNumFrames/numSpan * 2 << endl;
+	cout << "fps:" << fps << endl;
+	while(capture.isOpened())
+	{
+		capture >> image;
+		frameNum ++;
+		if(image.empty())
+			break;
+		if((frameNum % numSpan) != 1)
+			continue;
+		
+		printNum ++;
+		
+		cout << "frameIdx: " << printNum << endl;
+		sprintf(putpath, "%s\\%s_%06da.jpg", dirname.c_str(), newname.c_str(), printNum);
+		cout << putpath << endl;
+		
+		imwrite(string(putpath), image);
+		int key;
+		if(show_flag)
+		{
+			if(image.cols*image.rows >= 1080*720)
+				resize(image, image, Size(), 0.5, 0.5);
+			imshow("show", image);
+			key = waitKey(2);
+			if(key == 27)
+			{
+				destroyAllWindows();
+				show_flag = 0;
+			}
+		}
+	}
+	return 0;
+}
+
+
 int captureImage(int argc, char **argv)
 {
 	FILE *fpList = NULL;
