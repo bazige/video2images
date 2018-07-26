@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
-#include <opencv2/contrib/cpmtrib.hpp>
+#include <opencv2/contrib/contrib.hpp>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -34,15 +34,15 @@ void file_error(char *s)
 
 int findInfrared(Mat image)
 {
-	int numThreshhold = image.rows*image.cols/5;
+	int numThreshold = image.rows*image.cols/5;
 	int neualNum = 0;
 	for(int j = 0; j < image.rows; j++)
 	{
 		for(int i = 0; i < image.cols; i++)
 		{
-			if((image.at<cv::Vec3d>(j, i)[0] != image.at<cv::Vec3d>(j, i)[1]) || (image.at<cv::Vec3d>(j, i)[0] != image.at<cv::Vec3d>(j, i)[2]) || (image.at<cv::Vec3d>(j, i)[1] != image.at<cv::Vec3d>(j, i)[2]))
+			if((image.at<cv::Vec3b>(j, i)[0] != image.at<cv::Vec3b>(j, i)[1]) || (image.at<cv::Vec3b>(j, i)[0] != image.at<cv::Vec3b>(j, i)[2]) || (image.at<cv::Vec3b>(j, i)[1] != image.at<cv::Vec3b>(j, i)[2]))
 			{
-				nenualNum++;
+				neualNum++;
 			}
 			if(neualNum > numThreshold)
 			{
@@ -53,7 +53,7 @@ int findInfrared(Mat image)
 	return 1;
 }
 
-int findInfraredInROI(mat image, int roi_w, int roi_h)
+int findInfraredInROI(Mat image, int roi_w, int roi_h)
 {
 	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
 	int w = image.cols;
@@ -63,6 +63,7 @@ int findInfraredInROI(mat image, int roi_w, int roi_h)
 	unsigned char flag = 0, b;
 	cv::Mat imgROI, yuvImg;
 	cv::Mat img_y, img_u, img_v;
+	vector<cv::Mat> yuv_vec;
 	int i,j;
 	
 	if((w > roi_w)&&(h > roi_h))
@@ -108,7 +109,7 @@ int findInfraredInROI(mat image, int roi_w, int roi_h)
 		flag = 1;
 #endif	
 	
-	if((avg2.val[0] == 128) && (avg3.val[0] == 128) && condition 1)
+	if((avg2.val[0] == 128) && (avg3.val[0] == 128) && condition1)
 	{
 		return 1;
 	}
@@ -120,7 +121,7 @@ int findInfraredInROI(mat image, int roi_w, int roi_h)
 
 void get_filename(char *path, char *name)
 {
-	int i,j;
+	int i,j=0;
 	for(i=0; path[i]; i++)
 	{
 #ifdef WIN32
@@ -138,7 +139,8 @@ int capture2Imgs(int argc, char **argv)
 	printf("\nVideo path:\n");
 	char getpath[300];
 	char putpath[300];
-	int numSpan =1;
+	int frame2pos = 1;
+	int numSpan = 1;
 	int show_flag = 0;
 	
 	scanf("%s", getpath);
@@ -235,7 +237,7 @@ int captureImage(int argc, char **argv)
 		scanf("%d", &show_flag);
 		captureImg(getpath, numSpan, show_flag);
 	}
-	else if(strstr(getpath,".txt")||(strstr(getpath,".list"))
+	else if(strstr(getpath,".txt")||strstr(getpath,".list"))
 	{
 		printf("\nVideo frame interval:");
 		scanf("%d", &numSpan);
@@ -243,7 +245,7 @@ int captureImage(int argc, char **argv)
 		printf("\nShow image?1 for Y /0 for N");
 		scanf("%d", &show_flag);
 		
-		if(fpList = fopen(getpath, "r") == NULL)
+		if((fpList = fopen(getpath, "r")) == NULL)
 		{
 			printf("readTestList:error\n");
 			fclose(fpList);
@@ -252,10 +254,10 @@ int captureImage(int argc, char **argv)
 		while(!feof(fpList))
 		{
 			fgets(strLine, 1024, fpList);
-			if(strLine[strlen(strlen) - 1] == '\n')
-				strLine[strlen(strlen) - 1] = '\0';
+			if(strLine[strlen(strLine) - 1] == '\n')
+				strLine[strlen(strLine) - 1] = '\0';
 			
-			captureImg(getpath, numSpan, show_flag);
+			captureImg(strLine, numSpan, show_flag);
 		}
 	}
 	else
@@ -270,10 +272,10 @@ int captureInfrared_rgb(int argc, char **argv)
 {
 	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
 	FILE *fp = NULL;
-	fp = fopen("d:\\infrafred.txt", "w");
+	fp = fopen("d:\\infrared.txt", "w");
 	printf("\nVideo Path List:");
 	cv::Mat image;
-	FILE *fplist = NULL;
+	FILE *fpList = NULL;
 	char strLine[1024];
 	char getpath[300];
 	char putpath[300];
@@ -282,20 +284,20 @@ int captureInfrared_rgb(int argc, char **argv)
 	int roi_w = 300;
 	int roi_h = 200;
 	scanf("%s", getpath);
-	if((fplist = fopen(getpath, "r")) == NULL)
+	if((fpList = fopen(getpath, "r")) == NULL)
 	{
 		printf("readTestList:error\n");
-		fclose(fplist);
+		fclose(fpList);
 		return -1;
 	}
 	int num = 0;
-	while(!feof(fplist))
+	while(!feof(fpList))
 	{
 		num += 1;
 		cout << "num" << num << endl << endl;
-		fgets(strLine, 1024, fplist);			
-		if(strLine[strlen(strlen) - 1] == '\n')
-				strLine[strlen(strlen) - 1] = '\0';
+		fgets(strLine, 1024, fpList);			
+		if(strLine[strlen(strLine) - 1] == '\n')
+				strLine[strlen(strLine) - 1] = '\0';
 		
 		string inPath(strLine);
 		int npos1 = inPath.find_last_of("\\");
@@ -303,7 +305,7 @@ int captureInfrared_rgb(int argc, char **argv)
 		string dirnameC = dirname;
 		string vname = inPath.substr(npos1, string::npos);
 		string infrDir = dirname.append("\\Infrared");
-		string otherDir = dirname.append("\\Other");
+		string otherDir = dirnameC.append("\\Other");
 		_mkdir(infrDir.c_str());
 		_mkdir(otherDir.c_str());
 		
@@ -342,10 +344,10 @@ int captureInfrared_yuv(int argc, char **argv)
 {
 	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
 	FILE *fp = NULL;
-	fp = fopen("d:\\infrafred.txt", "w");
+	fp = fopen("d:\\infrared.txt", "w");
 	printf("\nVideo Path List:");
 	cv::Mat image;
-	FILE *fplist = NULL;
+	FILE *fpList = NULL;
 	char strLine[1024];
 	char getpath[300];
 	char putpath[300];
@@ -358,10 +360,10 @@ int captureInfrared_yuv(int argc, char **argv)
 	bool grayVideoFlg = true;
 	
 	scanf("%s", getpath);
-	if((fplist = fopen(getpath, "r")) == NULL)
+	if((fpList = fopen(getpath, "r")) == NULL)
 	{
 		printf("readTestList:error\n");
-		fclose(fplist);
+		fclose(fpList);
 		return -1;
 	}
 	int num = 0;
@@ -369,9 +371,9 @@ int captureInfrared_yuv(int argc, char **argv)
 	{
 		num += 1;
 		cout << "\nvideo:" << num << endl << endl;
-		fgets(strLine, 1024, fplist);			
-		if(strLine[strlen(strlen) - 1] == '\n')
-			strLine[strlen(strlen) - 1] = '\0';
+		fgets(strLine, 1024, fpList);			
+		if(strLine[strlen(strLine) - 1] == '\n')
+			strLine[strlen(strLine) - 1] = '\0';
 		
 		string inPath(strLine);
 		int npos1 = inPath.find_last_of("\\");
@@ -379,8 +381,8 @@ int captureInfrared_yuv(int argc, char **argv)
 		string dirnameC = dirname;
 		string vname = inPath.substr(npos1, string::npos);
 		string infrDir = dirname.append("\\Infrared");
-		string otherDir = dirname.append("\\Other");
-#if 0		
+		string otherDir = dirnameC.append("\\Other");
+#ifndef DEBUG		
 		_mkdir(infrDir.c_str());
 		_mkdir(otherDir.c_str());
 #endif
@@ -391,7 +393,7 @@ int captureInfrared_yuv(int argc, char **argv)
 			numSpan = fps*3;
 		else
 			numSpan = 75;
-#if 1
+#ifdef DEBUG
 		if(capture.isOpened())
 		{
 			frameNum ++;
@@ -402,7 +404,7 @@ int captureInfrared_yuv(int argc, char **argv)
 			}
 			else
 			{
-				grayVideoFlg =true
+				grayVideoFlg =true;
 			}
 		}
 #else	
@@ -435,7 +437,7 @@ int captureInfrared_yuv(int argc, char **argv)
 			string dstName = otherDir.append(vname);
 			printf("videoName:%s,",strLine);
 			SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_INTENSITY);
-			printf("Color\n", strLine);
+			printf("Color\n");
 			SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
 		}
 	}
@@ -454,7 +456,7 @@ typedef struct{
 			
 void drawBox(int argc, char **argv)
 {
-	#define BUFFLEN 1024
+	#define BUFLEN 1024
 	FILE *fp, *ft;
 	int i;
 	char b, *p;
@@ -464,26 +466,37 @@ void drawBox(int argc, char **argv)
 	char newDirName[1024];
 	char newImgName[1024];
 	char newImg[1024];
-	char buff[BUFFLEN];
+	char buff[BUFLEN];
 	
-	IplImage = *showimage;
+	IplImage *showimage;
 	int flag = 0;
+	int view_mode;
 	det_box box;
 	
 	printf("Please Enter Image List Path:\n");
 	scanf("%s", fpath);
 	if((fp = fopen(fpath, "r")) == NULL)
 	{
+		printf("%s\n", fpath);
 		printf("Image List Error!\n");
 		fclose(fp);
-		return -1;
+		return ;
+	}
+	
+	fflush(stdin);
+	printf("Show box or Save:0-show 1-save\n");
+	scanf("%d", &vide_mode);
+	while((view_mode != 0)&&(view_mode != 1))
+	{
+		printf("Please Enter 0 or 1!\n");
+		scanf("%d", &view_mode);
 	}
 	
 	while(!feof(fp))
 	{
 		fgets(strLine, 1024, fplist);			
-		if(strLine[strlen(strlen) - 1] == '\n')
-			strLine[strlen(strlen) - 1] = '\0';
+		if(strLine[strlen(strLine) - 1] == '\n')
+			strLine[strlen(strLine) - 1] = '\0';
 		printf("%s\n", strLine);
 		
 		showimage = cvLoadImage(strLine, 1);
@@ -493,9 +506,12 @@ void drawBox(int argc, char **argv)
 		p = strrchr(strLine, '\\');
 		p = p + 1;
 		
-		sprintf(newDirName, "%s\\draw_label\\", "Y:\\face_person\\FocusData");
-		mkdir(newDirName);
-		sprintf(newImg, "%s%s", newDirName, p);
+		if(view_mode == 1)
+		{
+			sprintf(newDirName, "%s\\draw_label\\", "Y:\\face_person\\FocusData");
+			mkdir(newDirName);
+			sprintf(newImg, "%s%s", newDirName, p);
+		}
 		
 		int nboxes = 0;
 		char labelpath[4096];
@@ -506,7 +522,7 @@ void drawBox(int argc, char **argv)
 		find_replace(labelpath, ".png", ".txt", labelpath);
 		
 		ft = fopen(labelpath, "r");
-		while(fgets(buff, BUFFLEN, ft);
+		while(fgets(buff, BUFLEN, ft));
 		{
 			int j = 0;
 			char *delim = " ";
@@ -535,8 +551,8 @@ void drawBox(int argc, char **argv)
 			CvPoint p0, p1;
 			p0.x = w*(box[i].ptx - box[i].sx/2);
 			p0.y = h*(box[i].pty - box[i].sy/2);
-			p1.x = w*(box[i].ptx - box[i].sx/2);
-			p1.y = h*(box[i].pty - box[i].sy/2);
+			p1.x = w*(box[i].ptx + box[i].sx/2);
+			p1.y = h*(box[i].pty + box[i].sy/2);
 			
 			if(box[i].type == 0)
 				cvRectangle(showimage, p0, p1, CV_RGB(255, 0, 0), 2, 8, 0);
@@ -545,23 +561,28 @@ void drawBox(int argc, char **argv)
 			else
 				cvRectangle(showimage, p0, p1, CV_RGB(0, 128, 128), 2, 8, 0);
 		}
-		cvSaveImage(newImg, showimage);
-#if 0			  
-		namedWindow("drawBox", CV_WINDOW_AUTOSIZE);
-		imshow("drawBox", showimage);
-
-		if(flag==0)
-			b = waitKey(0);
-		else
-			b = waitKey(1);
-
-		if(b == 'b')
-			flag = 0;
-		else
-			flag = 1;
 		
-		cvDestroyAllWindows();
-#endif
+		if(view_mode == 1)
+		{
+			cvSaveImage(newImg, showimage);
+		}
+		else
+		{		  
+			cvNamedWindow("drawBox", CV_WINDOW_AUTOSIZE);
+			cvShowImage("drawBox", showimage);
+
+			if(flag==0)
+				b = cvWaitKey(0);
+			else
+				b = cvWaitKey(1);
+
+			if(b == 'b')
+				flag = 1;
+			else
+				flag = 0;
+		
+			cvDestroyAllWindows();
+		}
 		fclose(ft);
 	}
 	fclose(fp);
@@ -588,9 +609,9 @@ void showImage(int argc, char **argv)
 	
 	while(!feof(fp))
 	{
-		fgets(strLine, 1024, fplist);			
-		if(strLine[strlen(strlen) - 1] == '\n')
-			strLine[strlen(strlen) - 1] = '\0';
+		fgets(strLine, 1024, fp);			
+		if(strLine[strlen(strLine) - 1] == '\n')
+			strLine[strlen(strLine) - 1] = '\0';
 		printf("%s\n", strLine);
 		
 		showimage = imread(strLine, 1);
@@ -603,9 +624,9 @@ void showImage(int argc, char **argv)
 		imshow("drawBox", showimage);
 
 		if(flag==0)
-			b = waitKey(0);
+			b = cvWaitKey(0);
 		else
-			b = waitKey(1);
+			b = cvWaitKey(1);
 
 		if(b == 'b')
 			flag = 0;
@@ -650,14 +671,14 @@ void imageResize(int argc, char **argv)
 	
 	while(!feof(fp))
 	{
-		fgets(strLine, 1024, fplist);			
-		if(strLine[strlen(strlen) - 1] == '\n')
-			strLine[strlen(strlen) - 1] = '\0';
+		fgets(strLine, 1024, fp);			
+		if(strLine[strlen(strLine) - 1] == '\n')
+			strLine[strlen(strLine) - 1] = '\0';
 		printf("%s\n", strLine);
 		
-		srcImg = imread(strLine, 1);
-		int w = srcImg.size().width;
-		int h = srcImg.size().height;
+		srcImg = imread(strLine);
+		w = srcImg.size().width;
+		h = srcImg.size().height;
 		
 		ratio = h/w;
 		h_new = floor(ratio*w_new);
@@ -714,5 +735,4 @@ int main(int argc, char **argv)
 	else
 		captureImage(argc, argv);
 	return 0;
-}
 }
