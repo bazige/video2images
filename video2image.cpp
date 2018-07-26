@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
-#include <opencv2/contrib/contrib.hpp>
+#include "opencv2/contrib/contrib.hpp"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -139,8 +139,8 @@ int capture2Imgs(int argc, char **argv)
 	printf("\nVideo path:\n");
 	char getpath[300];
 	char putpath[300];
-	int frame2pos = 1;
 	int numSpan = 1;
+	int frame2pos = 1;
 	int show_flag = 0;
 	
 	scanf("%s", getpath);
@@ -228,7 +228,7 @@ int captureImage(int argc, char **argv)
 	int num = 0;
 	
 	scanf("%s", getpath);
-	if(strstr(getpath,".dav")||(strstr(getpath,".avi"))
+	if(strstr(getpath,".dav")||strstr(getpath,".avi"))
 	{
 		printf("\nVideo interval:");
 		scanf("%d", &numSpan);
@@ -367,7 +367,7 @@ int captureInfrared_yuv(int argc, char **argv)
 		return -1;
 	}
 	int num = 0;
-	while(!feof(fplist))
+	while(!feof(fpList))
 	{
 		num += 1;
 		cout << "\nvideo:" << num << endl << endl;
@@ -420,7 +420,7 @@ int captureInfrared_yuv(int argc, char **argv)
 				grayVideoFlg = false;
 				break;
 			}
-			grayVideoFlg =true
+			grayVideoFlg =true;
 		}
 #endif			
 		if(grayVideoFlg)
@@ -428,7 +428,7 @@ int captureInfrared_yuv(int argc, char **argv)
 			string dstName = infrDir.append(vname);
 			printf("videoName:%s,",strLine);
 			SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_INTENSITY);
-			printf("Infrared\n", strLine);
+			printf("Infrared\n");
 			SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
 			fprintf(fp, "%s\n", strLine);
 		}
@@ -485,7 +485,7 @@ void drawBox(int argc, char **argv)
 	
 	fflush(stdin);
 	printf("Show box or Save:0-show 1-save\n");
-	scanf("%d", &vide_mode);
+	scanf("%d", &view_mode);
 	while((view_mode != 0)&&(view_mode != 1))
 	{
 		printf("Please Enter 0 or 1!\n");
@@ -494,7 +494,7 @@ void drawBox(int argc, char **argv)
 	
 	while(!feof(fp))
 	{
-		fgets(strLine, 1024, fplist);			
+		fgets(strLine, 1024, fp);			
 		if(strLine[strlen(strLine) - 1] == '\n')
 			strLine[strlen(strLine) - 1] = '\0';
 		printf("%s\n", strLine);
@@ -522,7 +522,7 @@ void drawBox(int argc, char **argv)
 		find_replace(labelpath, ".png", ".txt", labelpath);
 		
 		ft = fopen(labelpath, "r");
-		while(fgets(buff, BUFLEN, ft));
+		while(fgets(buff, BUFLEN, ft))
 		{
 			int j = 0;
 			char *delim = " ";
@@ -618,7 +618,7 @@ void showImage(int argc, char **argv)
 		int w = showimage.size().width;
 		int h = showimage.size().height;
 		
-		if(w*h >= 1280*720)
+		if(w*h >= 1080*720)
 			resize(showimage, showimage, Size(), 0.5, 0.5);
 		
 		imshow("drawBox", showimage);
