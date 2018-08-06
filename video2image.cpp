@@ -773,7 +773,150 @@ void imageResize(int argc, char **argv)
 	}
 	fclose(fp);
 }
-			  
+
+void imageRoiCut_labelCorrect(int argc, char **argv)
+{
+//#define SHOW_IMG
+	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
+	FILE *fp, *ft, *ft_n;
+	Mat srcImg, dstImg;
+	Mat show_img, dst_show;
+	int w, h, w_new, stride;
+	int ROI_startx, ROI_endx;
+	int i,k,num;
+	char buff[512];
+	det_box box;
+	float wh_thresh = 1.0/8;
+	
+	char *p, *pp;
+	char fpath[500];
+	char name[500];
+	char strLine[500];
+	char dirName[500];
+	char filename[500];
+	char labelfilename[500];
+	char labelpath[500];
+	memset(buff, 0, 512);
+	memset(fpath, 0, 500);
+	memset(strLine, 0, 500);
+	memset(labelpath, 0, 500);
+	SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_INTENSITY);
+	printf("\n Note:\n   Copy image's ROI zone and save\n");
+	printf("   ROI's height is equal to image's height, while its width is overlapped.\n\n");
+	SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
+	
+	printf("Please Enter the image List Path:\n");
+	scanf("%s", fpath);
+	if((fp == fopen(fpath, "r"))== NULL)
+	{
+		printf("%s\n", fpath);
+		printf("Image List Error!\n");
+		fclose(fp);
+		return;
+	}
+	fflush(stdin);
+	printf("Please input the cut ROI image nums:\n");
+	scanf("%d", &num);
+	
+	while(!feof(fp))
+	{
+		fgets(strLine, 1024, fp);
+		if(strLine[strlen(strLine)-1] == '\n')
+			strLine[strlen(strLine) - 1] = '\0';
+		printf("%s\n", strLine);
+		
+		srcImg = imread(strLine);
+		w = srcImg.size().width;
+		h = srcImg.size().height;
+		
+		w_new = w / new;
+		stride = w_new / 5;
+		
+		//label correct
+		int nboxes = 0;
+		find_replace(strLine, "images", "labels", labelpath);
+		find_replace(labelpath, "JPEGImages", "labels", labelpath);
+		find_replace(labelpath, ".jpg", ".txt", labelpath);
+		find_replace(labelpath, ".JPEG", ".txt", labelpath);
+		find_replace(labelpath, ".png", ".txt", labelpath);
+		ft = fopen(labelpath, "r");
+		
+		while(fgets(buff, 500, ft))
+		{
+			int j=0;
+			char *delim = " ";
+			char *p = strtok(buff, delim);
+			while(p!= NULL)
+			{
+				if(j%5==0)
+					box[nboxes].type = atoi(p);
+				else if(j%5==1)
+					box[nboxes].ptx = atof(p);
+				else if(j%5==2)
+					box[nboxes].pty = atof(p);
+				else if(j%5==3)
+					box[nboxes].sx = atof(p);
+				else
+					box[nboxes].sy = atof(p);
+				
+				p = strtok(NULL, delim);
+				j++;
+			}
+			nboxes++;
+		}
+		
+		//roi image start and end point caculate
+		for(i=0; i<num; i++)
+		{
+			if(i == 0)
+			{
+				ROI_startx = 0;
+				ROI_endx = w_new + stride;
+			}
+			else if(i==num-1)
+			{
+				ROI_startx = w_new*i - stride;
+				ROI_endx = w;
+			}
+			else
+			{
+				ROI_startx = w_new*i - stride/2;
+				ROI_endx = w_new*(i + 1) + stride/2;
+			}
+			
+			Rect rect(ROI_startx, 0, ROI_endx - ROI_startx, h);
+			dstImg = srcImg(rect);
+			
+			memset(name, 0, 500);
+			memset(dirName, 0, 500);
+			memset(filename, 0, 500);
+			memset(labelfilename, 0, 500);
+			
+			p = strrchr(strLine, '\\');
+			memcpy(dirName, strLine, strlen(strLine)-strlen(p));
+			sprintf(dirName, "%s\\roi_cut\\", dirName);
+			//mkdir(dirName);
+			pp = strrchr(strLine, '.');
+			
+			memcpy(name, p + 1, strlen(p)-strlen(pp) - 1);
+			//sprintf(filename, "%s%s_%d.jpg", dirName, name, i);
+			//printf("filename=%s\n", filename);
+			//imwrite(filename, dstImg);
+			
+			char savePath[100] = "Y:\\face_person\\FocusData\\train_data_ROI\\img\\";
+			sprintf(filename, "%s%s_%d.jpg", savePath, name, i);
+			imwrite(filename, dstImg);
+			
+#ifdef SHOW_IMG
+			srcImg.copyTo(show_img);
+			dstImg.copyTo(dst_show);
+			
+			for()
+			
+		}
+	}
+}
+
 int main(int argc, char **argv)
 {
 	printf("0: video -> image\n");
@@ -798,6 +941,8 @@ int main(int argc, char **argv)
 		showImage(argc, argv);
 	else if(model == 6)
 		imageResize(argc, argv);
+	else if(model == 7)
+		imageRoiCut_labelCorrect(argc, argv);
 	else
 		captureImage(argc, argv);
 	return 0;
