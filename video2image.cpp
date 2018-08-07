@@ -1042,7 +1042,8 @@ int main(int argc, char **argv)
 	printf("4: Draw box in label image\n");
 	printf("5: Preview image\n");
 	printf("6: Image Resize(Letter box)\n");
-	printf("Please Select tool's index: 0 or 1 or 2 or 3 or 4 or 5 or 6:");
+	printf("7: Image ROI cut, and it's label will be modified.\n");
+	printf("Please Select tool's index: 0 or 1 or 2 or 3 or 4 or 5 or 6 or 7:");
 	int model = 0;
 	scanf("%d", &model);
 	if(model == 1)
