@@ -864,6 +864,7 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 			}
 			nboxes++;
 		}
+		fclose(ft);
 		
 		//roi image start and end point caculate
 		for(i=0; i<num; i++)
@@ -911,10 +912,125 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 			srcImg.copyTo(show_img);
 			dstImg.copyTo(dst_show);
 			
-			for()
+			for(k=0; k<nboxes; k++)
+			{
+				CvPoint p0, p1;
+				p0.x = w*(box[k].ptx - box[k].sx/2);
+				p0.y = h*(box[k].pty - box[k].sy/2);
+				p1.x = w*(box[k].ptx + box[k].sx/2);
+				p1.y = h*(box[k].pty + box[k].sy/2);
+				
+				if(box[k].type == 0)
+					cv::rectangle(show_img, p0, p1, CV_RGB(255, 0, 0), 2, 8, 0);
+				else if(box[k].type == 0)
+					cv::rectangle(show_img, p0, p1, CV_RGB(0, 0, 255), 2, 8, 0);
+				else
+					cv::rectangle(show_img, p0, p1, CV_RGB(0, 128, 128), 2, 8, 0);
+			}
 			
+			cv::rectangle(show_img, p0, p1, CV_RGB(255, 0, 0), 2, 8, 0);
+			imshow("Orig", show_img);
+#endif
+			//select label box according to sub-ROIimage
+			sprintf(labelfilename, "%s%s_%d.txt", savePath, name, i);
+			ft_n = fopen(labelfilename, "w");
+			for(k=0; k<nboxes; k++)
+			{
+				//label boxes coordinates refer to original Image
+				int box_left = (box[k].ptx - box[k].sx/2)*2;
+				int box_right = (box[k].ptx + box[k].sx/2)*2;
+				int box_w = box[k].sx*w;
+				int box_h = box[k].sy*w;
+				if(box_left < 0) box_left = 0;
+				if(box_right > w - 1) box_right = w - 1;
+				float subBox_ptx, subBox_sx;
+				int subBox_w;
+				
+				//label box in sub-image(ROI-Image)
+				if((box_left >= ROI_startx)&&(box_right <= ROI_endx))
+				{
+					subBox_ptx = (float)(box_left - ROI_startx + box_w/2.0)/(ROI_endx - ROI_startx);
+					subBox_sx = (float)box_w/(ROI_endx - ROI_startx);
+					
+					fprintf(ft_n, "%d %f %f %f %f\n", box[k].type, subBox_ptx, box[k].pty, subBox_sx, box[k].sy);
+#ifdef SHOW_IMG					
+					CvPoint pb0, pb1;
+					pb0.x = (subBox_ptx - subBox_sx/2)*(ROI_endx - ROI_startx);
+					pb0.y = h*(box[k].pty - box[k].sy/2);
+					pb1.x = (subBox_ptx + subBox_sx/2)*(ROI_endx - ROI_startx);
+					pb1.y = h*(box[k].pty + box[k].sy/2);
+
+					if(box[k].type == 0)
+						cv::rectangle(show_img, p0, p1, CV_RGB(255, 0, 0), 2, 8, 0);
+					else if(box[k].type == 0)
+						cv::rectangle(show_img, p0, p1, CV_RGB(0, 0, 255), 2, 8, 0);
+					else
+						cv::rectangle(show_img, p0, p1, CV_RGB(0, 128, 128), 2, 8, 0);
+#endif					
+				}
+				//label box expand to other sub-image
+				else if(((box_left < ROI_startx)&&(box_right > ROI_startx))||((box_left <= ROI_endx)&&(box_right > ROI_endx)))
+				{
+					if((box_left < ROI_startx)&&(box_right > ROI_startx))
+					{
+						subBox_w = box_right - ROI_startx;
+						if((float)subBox_w/box_h >= wh_thresh)
+						{
+							subBox_ptx = (float)(subBox_w/2)/(ROI_endx - ROI_startx);
+							subBox_sx = (float)subBox_w/(ROI_endx - ROI_startx);
+							
+							fprintf(ft_n, "%d %f %f %f %f\n", box[k].type, subBox_ptx, box[k].pty, subBox_sx, box[k].sy);
+#ifdef SHOW_IMG					
+							CvPoint pb0, pb1;
+							pb0.x = (subBox_ptx - subBox_sx/2)*(ROI_endx - ROI_startx);
+							pb0.y = h*(box[k].pty - box[k].sy/2);
+							pb1.x = (subBox_ptx + subBox_sx/2)*(ROI_endx - ROI_startx);
+							pb1.y = h*(box[k].pty + box[k].sy/2);
+
+							if(box[k].type == 0)
+								cv::rectangle(show_img, p0, p1, CV_RGB(255, 0, 0), 2, 8, 0);
+							else if(box[k].type == 0)
+								cv::rectangle(show_img, p0, p1, CV_RGB(0, 0, 255), 2, 8, 0);
+							else
+								cv::rectangle(show_img, p0, p1, CV_RGB(0, 128, 128), 2, 8, 0);
+#endif	
+						}
+					}
+					if((box_left <= ROI_endx)&&(box_right > ROI_endx))
+					{
+						subBox_w = ROI_endx - box_left;
+						if((float)subBox_w/box_h >= wh_thresh)
+						{
+							subBox_ptx = (float)(ROI_endx - subBox_w/2)/(ROI_endx - ROI_startx);
+							subBox_sx = (float)subBox_w/(ROI_endx - ROI_startx);
+							
+							fprintf(ft_n, "%d %f %f %f %f\n", box[k].type, subBox_ptx, box[k].pty, subBox_sx, box[k].sy);
+#ifdef SHOW_IMG					
+							CvPoint pb0, pb1;
+							pb0.x = (subBox_ptx - subBox_sx/2)*(ROI_endx - ROI_startx);
+							pb0.y = h*(box[k].pty - box[k].sy/2);
+							pb1.x = (subBox_ptx + subBox_sx/2)*(ROI_endx - ROI_startx);
+							pb1.y = h*(box[k].pty + box[k].sy/2);
+
+							if(box[k].type == 0)
+								cv::rectangle(show_img, p0, p1, CV_RGB(255, 0, 0), 2, 8, 0);
+							else if(box[k].type == 0)
+								cv::rectangle(show_img, p0, p1, CV_RGB(0, 0, 255), 2, 8, 0);
+							else
+								cv::rectangle(show_img, p0, p1, CV_RGB(0, 128, 128), 2, 8, 0);
+#endif	
+						}
+					}
+				}
+			}
+			fclose(ft_n);
+#ifdef SHOW_IMG
+			imshow("ROI", dst_show);
+			waitKey();
+#endif			
 		}
 	}
+	fclose(fp);
 }
 
 int main(int argc, char **argv)
