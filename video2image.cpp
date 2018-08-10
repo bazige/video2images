@@ -556,7 +556,7 @@ void drawBox(int argc, char **argv)
 	}
 	
 	fflush(stdin);
-	printf("Show box or Save:0-show 1-save\n");
+	printf("Show box or Save:0->show 1->save\n");
 	scanf("%d", &view_mode);
 	while((view_mode != 0)&&(view_mode != 1))
 	{
@@ -593,9 +593,9 @@ void drawBox(int argc, char **argv)
 		find_replace(labelpath, ".JPEG", ".txt", labelpath);
 		find_replace(labelpath, ".png", ".txt", labelpath);
 		
-		if((ft = fopen(labelpath, "r")==NULL)
+		if((ft = fopen(labelpath, "r"))==NULL)
 		{
-			printf("LabelPath is error!\n);	
+			printf("LabelPath is error!\n");	
 			return;
 		}
 		
@@ -680,6 +680,7 @@ void showImage(int argc, char **argv)
 	cv::Mat showimage;
 	int flag = 0;
 	int colorSpace;
+	int selSpace;
 	SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_INTENSITY);
 	printf("\n Note:\n   Showing image include: .jpg(JPG) .png(PNG) .bmp(BMP) .yuv(YUV)\n");
 	printf("   YUV image should convert to BGR\n\n");
@@ -697,7 +698,7 @@ void showImage(int argc, char **argv)
 	}
 	
 	fflush(stdin);
-	printf("Please select ColorSpace:(not wor for RGB image)\n    0->YUV2BGR, 1->NV21, 2->NV12, 3->UYVY, 4->YVYU, 5->YUYV\n");
+	printf("Please select ColorSpace:(not work for RGB image)\n    0->YUV2BGR, 1->NV21, 2->NV12, 3->UYVY, 4->YVYU, 5->YUYV\n");
 	scanf("%d", colorSpace);
 	switch(colorSpace)
 	{
@@ -775,6 +776,7 @@ void imageResize(int argc, char **argv)
 	Mat srcImg, dstImg;
 	float w, h, w_new, h_new;
 	float arg1, arg2, r;
+	float ratio;
 	char mode;
 	char name[100];
 	char savePath[100];
@@ -801,11 +803,11 @@ void imageResize(int argc, char **argv)
 	if(mode == 'w')
 	{
 		w_new = arg1;
-		ratio = 0;
+		ratio = 0.0;
 	}
 	else if(mode == 'r')
 	{
-		w_new = 0;
+		w_new = 0.0;
 		ratio = arg1;
 	}
 	else
@@ -849,6 +851,8 @@ void imageResize(int argc, char **argv)
 			w_new = floor(w*ratio);
 			h_new = floor(h*ratio);
 			if(((int)w_new%2) != 0)
+				w_new = w_new + 1;
+			if(((int)h_new%2) != 0)
 				h_new = h_new + 1;
 			if(w_new>w)
 				w_new = w;
@@ -893,6 +897,7 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 	int i,k,num;
 	char buff[BUFF_LEN];
 	det_box box;
+	
 	float wh_thresh = 1.0/8;
 	
 	char *p, *pp;
@@ -908,7 +913,7 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 	memset(strLine, 0, 500);
 	memset(labelpath, 0, 500);
 	SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_INTENSITY);
-	printf("\n Note:\n   Copy image's ROI zone and save\n");
+	printf("\n Note:\n   Copy image's ROI zone and Save\n");
 	printf("   ROI's height is equal to image's height, while its width is overlapped.\n\n");
 	SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
 	
@@ -936,7 +941,7 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 		w = srcImg.size().width;
 		h = srcImg.size().height;
 		
-		w_new = w / new;
+		w_new = w / num;
 		stride = w_new / 5;
 		
 		//label correct
@@ -947,10 +952,10 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 		find_replace(labelpath, ".JPEG", ".txt", labelpath);
 		find_replace(labelpath, ".png", ".txt", labelpath);
 		
-		if((ft = fopen(labelpath, "r")==NULL)
+		if((ft = fopen(labelpath, "r"))==NULL)
 		{
 			SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_INTENSITY);
-			printf("Label open ERROR, label does't match with image!\n");
+			printf("Label open ERROR, label doesn't match with image!\n");
 			SetConsoleTextAttribute(hdl, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
 			return;
 		}
@@ -1050,7 +1055,7 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 #endif
 			//select label box according to sub-ROIimage
 			sprintf(labelfilename, "%s%s_%d.txt", savePath, name, i);
-			if((ft_n = fopen(labelfilename, "w")==NULL)
+			if((ft_n = fopen(labelfilename, "w"))==NULL)
 			{
 				printf("Save Path of label and image is not correct!\n");
 				return;
@@ -1058,7 +1063,7 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 			
 			for(k=0; k<nboxes; k++)
 			{
-				//label boxes coordinates refer to original Image
+				//label boxes' coordinates refer to original Image
 				int box_left = (box[k].ptx - box[k].sx/2.0)*w;
 				int box_right = (box[k].ptx + box[k].sx/2.0)*w;
 				int box_w = box[k].sx*w;
@@ -1084,7 +1089,7 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 
 					if(box[k].type == 0)
 						cv::rectangle(dst_show, pb0, pb1, CV_RGB(255, 0, 0), 2, 8, 0);
-					else if(box[k].type == 0)
+					else if(box[k].type == 1)
 						cv::rectangle(dst_show, pb0, pb1, CV_RGB(0, 0, 255), 2, 8, 0);
 					else
 						cv::rectangle(dst_show, pb0, pb1, CV_RGB(0, 128, 128), 2, 8, 0);
@@ -1111,7 +1116,7 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 
 							if(box[k].type == 0)
 								cv::rectangle(dst_show, pb0, pb1, CV_RGB(255, 0, 0), 2, 8, 0);
-							else if(box[k].type == 0)
+							else if(box[k].type == 1)
 								cv::rectangle(dst_show, pb0, pb1, CV_RGB(0, 0, 255), 2, 8, 0);
 							else
 								cv::rectangle(dst_show, pb0, pb1, CV_RGB(0, 128, 128), 2, 8, 0);
@@ -1136,7 +1141,7 @@ void imageRoiCut_labelCorrect(int argc, char **argv)
 
 							if(box[k].type == 0)
 								cv::rectangle(dst_show, pb0, pb1, CV_RGB(255, 0, 0), 2, 8, 0);
-							else if(box[k].type == 0)
+							else if(box[k].type == 1)
 								cv::rectangle(dst_show, pb0, pb1, CV_RGB(0, 0, 255), 2, 8, 0);
 							else
 								cv::rectangle(dst_show, pb0, pb1, CV_RGB(0, 128, 128), 2, 8, 0);
